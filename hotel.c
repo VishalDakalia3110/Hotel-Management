@@ -793,3 +793,21 @@ void ShowCurrentBooking(MYSQL *conn) {
    }
     
 }
+void ShowPreviousBooking(MYSQL *conn) {
+   printf("Previous Bookings are :-\n");
+   char query[256] = "SELECT * from Billing";
+   if(mysql_query(conn, query)) finish_with_error(conn);
+   MYSQL_RES *result;
+   result = mysql_store_result(conn);
+   if(result == NULL) finish_with_error(conn);
+   int num_rows = mysql_num_rows(result);
+   if(num_rows == 0) printf("No Bookings are present...\n");
+   else {
+        int num_fields = mysql_num_fields(result);                                                                                                            MYSQL_FIELD *field;
+        MYSQL_ROW row;
+        while ((field = mysql_fetch_field(result))) {                                                                                                             printf("%-15s", field->name);
+        }                                                                                                                                                     printf("\n");
+         while ((row = mysql_fetch_row(result))) {                                                                                                                 for (int i = 0; i < num_fields; i++) {                                                                                                                    printf("%-15s", row[i] ? row[i] : "NULL");
+         }                                                                                                                                                     printf("\n");                                                                                                                                     }
+                                                                                                                                                         }
+                                                                                                                                                      }
