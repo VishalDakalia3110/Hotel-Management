@@ -19,9 +19,13 @@ void AddRoom(MYSQL *conn);
 void UpdateRoom(MYSQL *conn);
 void SearchRoom(MYSQL *conn);
 void RemoveRoom(MYSQL *conn);
+void ShowCurrentBooking(MYSQL *conn);
+void ShowPreviousBooking(MYSQL *conn);
+void BookRoom(MYSQL *conn);
+void Bill(MYSQL *conn);
 
 void Rooms(MYSQL *conn);
-void Booking(MYSQL *conn);
+void booking(MYSQL *conn);
 void Customer_Details(MYSQL *conn);
 
 void MainMenu(MYSQL *conn);
@@ -65,7 +69,7 @@ void MainMenu(MYSQL *conn ){
 				Rooms(conn);
 				break;
 			case 3:
-			//	booking(conn);
+				booking(conn);
 				break;
 			case 4:
 				temp = 0;
@@ -470,7 +474,7 @@ void Rooms(MYSQL *conn) {
                         RemoveRoom(conn);
                         break;
                 case 5:
-                       // SearchRoom(conn);
+                        //SearchRoom(conn);
                         break;
                 case 6:
                         MainMenu(conn);
@@ -735,3 +739,57 @@ void RemoveRoom(MYSQL *conn) {
     }
 }
 
+void booking(MYSQL *conn) {
+    while(true) {
+    	int choice;
+	printf("Booking Options are :-\n");
+	printf("1. Show current booking\n");
+	printf("2. Show previous booking\n");
+	printf("3. Booking of a Room\n");
+	printf("4. Generate Bill\n");
+	printf("5. Back to Mainmenu<<\n");
+	printf("Enter your choice :- ");
+	scanf("%d",&choice);
+	switch (choice) {
+	    case 1:
+		    ShowCurrentBooking(conn);
+		    break;
+	    case 2:
+		    //ShowPreviousBooking(conn);
+		    break;
+	    case 3:
+		    //BookRoom(conn);
+		    break;
+	    case 4:
+		    //Bill(conn);
+		    break;
+	    case 5:
+		    MainMenu(conn);
+		    break;
+	    default:
+		    printf("Invalid Input...\n");	    
+	}
+    }
+}
+
+void ShowCurrentBooking(MYSQL *conn) {
+   printf("Current Bookings are :-\n");
+   char query[256] = "SELECT * from Booking";
+   if(mysql_query(conn, query)) finish_with_error(conn);
+   MYSQL_RES *result;
+   result = mysql_store_result(conn);
+   if(result == NULL) finish_with_error(conn);
+   int num_rows = mysql_num_rows(result);
+   if(num_rows == 0) printf("No Bookings are present...\n");
+   else {
+   	int num_fields = mysql_num_fields(result);                                                                                                            MYSQL_FIELD *field;
+	MYSQL_ROW row;
+	while ((field = mysql_fetch_field(result))) {                                                                                                             printf("%-15s", field->name);
+	}
+	printf("\n");
+	 while ((row = mysql_fetch_row(result))) {                                                                                                                 for (int i = 0; i < num_fields; i++) {                                                                                                                    printf("%-15s", row[i] ? row[i] : "NULL");  
+	 }                                                                                                                                                     printf("\n");                                                                                                                                     }
+	
+   }
+    
+}
