@@ -742,12 +742,12 @@ void RemoveRoom(MYSQL *conn) {
 void booking(MYSQL *conn) {
     while(true) {
     	int choice;
-	printf("Booking Options are :-\n");
-	printf("1. Show current booking\n");
-	printf("2. Show previous booking\n");
-	printf("3. Booking of a Room\n");
-	printf("4. Generate Bill\n");
-	printf("5. Back to Mainmenu<<\n");
+	printf("Booking Options are :-\n\n");
+	printf("\t1. Show current booking\n");
+	printf("\t2. Show previous booking\n");
+	printf("\t3. Booking of a Room\n");
+	printf("\t4. Generate Bill\n");
+	printf("\t5. Back to Mainmenu<<\n\n");
 	printf("Enter your choice :- ");
 	scanf("%d",&choice);
 	switch (choice) {
@@ -755,10 +755,10 @@ void booking(MYSQL *conn) {
 		    ShowCurrentBooking(conn);
 		    break;
 	    case 2:
-		    //ShowPreviousBooking(conn);
+		    ShowPreviousBooking(conn);
 		    break;
 	    case 3:
-		    //BookRoom(conn);
+		    BookRoom(conn);
 		    break;
 	    case 4:
 		    //Bill(conn);
@@ -810,4 +810,165 @@ void ShowPreviousBooking(MYSQL *conn) {
          while ((row = mysql_fetch_row(result))) {                                                                                                                 for (int i = 0; i < num_fields; i++) {                                                                                                                    printf("%-15s", row[i] ? row[i] : "NULL");
          }                                                                                                                                                     printf("\n");                                                                                                                                     }
                                                                                                                                                          }
-                                                                                                                                                      }
+}
+
+
+void BookRoom(MYSQL *conn) {
+    printf("Booking Room...\n");
+    int BID, R_no, ID;
+    char Enroll_Date[20];
+
+    printf("Enter Booking ID :- ");
+    scanf("%d", &BID);
+
+    // Check if Booking ID exists
+    while (1) {
+        char query[256];
+        snprintf(query, sizeof(query), "SELECT * FROM Booking WHERE BID=%d", BID);
+
+        if (mysql_query(conn, query)) {
+            finish_with_error(conn);
+        }
+
+        MYSQL_RES *result = mysql_store_result(conn);
+        if (result == NULL) {
+            finish_with_error(conn);
+        }
+
+        int cnt = mysql_num_rows(result);
+        mysql_free_result(result);
+
+        if (cnt >= 1) {
+            printf("Booking ID %d already exists...\n", BID);
+            printf("Again Enter Booking ID > ");
+            scanf("%d", &BID);
+        } else {
+            break;
+        }
+    }
+    printf("Checking for Availablity of Rooms...\n");
+    if (mysql_query(conn, "SELECT R_no, R_type FROM Room_Details WHERE Vacancy LIKE '%Vacant%' ORDER BY R_no")) {
+        finish_with_error(conn);
+    }
+
+    MYSQL_RES *result = mysql_store_result(conn);
+    if (result == NULL) {
+        finish_with_error(conn);
+    }
+
+    int cnt = mysql_num_rows(result);
+    if (cnt == 0) {
+        printf("No Rooms are Available...\n");
+    } else {
+        printf("Available Rooms are :-\n");
+
+        MYSQL_ROW row;
+        while ((row = mysql_fetch_row(result))) {
+            printf("Room No: %s, Room Type: %s\n", row[0], row[1]);
+        }
+        printf("\n");
+    }
+    mysql_free_result(result);
+    printf("Enter Room Number :- ");
+    scanf("%d", &R_no);
+    while (true) {
+        char query[256];
+        snprintf(query, sizeof(query), "SELECT * FROM Room_Details WHERE R_no=%d", R_no);
+        mysql_query(conn, query);
+
+        result = mysql_store_result(conn);
+        cnt = mysql_num_rows(result);
+        mysql_free_result(result);
+
+        if (cnt == 0) {
+            printf("Room No. %d does not exist...\n", R_no);
+            printf("Again Enter Room No :- ");
+            scanf("%d", &R_no);
+        }
+	else {
+            snprintf(query, sizeof(query), "SELECT * FROM Room_Details WHERE Vacancy LIKE '%%Booked%%' AND R_no=%d", R_no);
+            mysql_query(conn, query);
+
+            result = mysql_store_result(conn);
+            cnt = mysql_num_rows(result);
+            mysql_free_result(result);
+
+            if (cnt >= 1) {
+                printf("Room No. %d is already booked...\n", R_no);
+                printf("Again Enter Room No :- ");
+                scanf("%d", &R_no);
+            } 
+	    else {
+                break;
+            }
+        }
+    }
+    printf("Guest ID :- ");
+    scanf("%d", &ID);
+
+    while (true) {
+        char query[256];
+        snprintf(query, sizeof(query), "SELECT * FROM Hotel_Visitors WHERE ID=%d", ID);
+        mysql_query(conn, query);
+
+        result = mysql_store_result(conn);
+        cnt = mysql_num_rows(result);
+        mysql_free_result(result);
+
+        if (cnt == 0) {
+            printf("Guest ID %d does not exist...\n", ID);
+            printf("Again Enter Guest ID :- ");
+            scanf("%d", &ID);
+        }
+	else {
+            break;
+        }
+    }
+     // Enter Check-in Date
+    printf("Check-in Date (YYYY-MM-DD) > ");
+    scanf("%s", Enroll_Date);
+
+    // Insert into Booking
+    char query[512];
+    snprintf(query, sizeof(query),"INSERT INTO Booking (BID, ID, R_no, Enroll_Date) VALUES (%d, %d, %d, '%s')",BID, ID, R_no, Enroll_Date);
+    if (mysql_query(conn, query)) {
+        finish_with_error(conn);
+    }
+
+    // Insert into Billing
+    snprintf(query, sizeof(query),
+             "INSERT INTO Billing (BID, ID, R_no, Enroll_Date) VALUES (%d, %d, %d, '%s')",
+             BID, ID, R_no, Enroll_Date);
+    if (mysql_query(conn, query)) {
+        finish_with_error(conn);
+    }
+
+    // Update Room Vacancy to Booked
+    snprintf(query, sizeof(query), "UPDATE Room_Details SET Vacancy='Booked' WHERE R_no=%d", R_no);
+    if (mysql_query(conn, query)) {
+        finish_with_error(conn);
+    }
+
+    // Fetch and display guest name
+    snprintf(query, sizeof(query), "SELECT Name FROM Hotel_Visitors WHERE ID=%d", ID);
+    if (mysql_query(conn, query)) {
+        finish_with_error(conn);
+    }
+
+    result = mysql_store_result(conn);
+    if (result == NULL) {
+        finish_with_error(conn);
+    }
+
+    MYSQL_ROW row = mysql_fetch_row(result);
+    printf("Room No. %d booked successfully for Guest %s...\n", R_no, row[0]);
+    mysql_free_result(result);
+
+
+}
+
+
+
+
+
+
