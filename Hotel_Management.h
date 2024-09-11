@@ -1,0 +1,14 @@
+void AddVisitor(MYSQL *conn);
+void UpdateVisitor(MYSQL *conn);
+void RemoveVisitor(MYSQL *conn);
+void SearchVisitor(MYSQL *conn);
+void ShowVisitor(MYSQL *conn);
+void ShowRoom(MYSQL *conn);
+void AddRoom(MYSQL *conn);
+void UpdateRoom(MYSQL *conn);
+void SearchRoom(MYSQL *conn);
+void RemoveRoom(MYSQL *conn);
+void ShowCurrentBooking(MYSQL *conn);
+void ShowPreviousBooking(MYSQL *conn);
+void BookRoom(MYSQL *conn);
+void Bill(MYSQL *conn);
